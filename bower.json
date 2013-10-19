@@ -1,0 +1,12 @@
+{
+  "name": "mathimation",
+  "version": "0.0.0",
+  "dependencies": {
+    "requirejs": "~2.1.8",
+    "modernizr": "~2.6.2",
+    "jquery": "~1.10.2",
+    "d3": "~3.3.7",
+    "lodash": "~2.2.1"
+  },
+  "devDependencies": {}
+}
