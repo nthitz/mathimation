@@ -1,4 +1,5 @@
-define(['lodash','canvas','raf','tweenjs','timelineController','d3'],  (_,canvas,raf,tweenjs,timeline,d3) ->
+
+define(['lodash','canvas','raf','tweenjs','timelineController','d3','path'],  (_,canvas,raf,tweenjs,timeline,d3,path) ->
     'use strict';
     console.log canvas
     dim = 500
@@ -11,9 +12,10 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3'],  (_,canvas
     console.log(raf)
     
     w = $(document).width()
+    resetTime = 6000
     $(document).on('mousemove',(event) ->
         pct = event.clientX / w
-        pct *= 5000
+        pct *= resetTime
         reset(pct)
     )
     unitSize = 50
@@ -25,7 +27,13 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3'],  (_,canvas
     xScaleMax = 4
     xScaleDiff = xScaleMax - xScaleMin
     xScale = d3.scale.linear().domain([xScaleMin, xScaleMax]).range([leftPadding, leftPadding + unitSize * xScaleDiff])
+    scale = d3.scale.linear().domain([xScaleMin, xScaleMax]).range([0, unitSize * xScaleDiff])
     xScaleTickArray = [xScaleMin..xScaleMax]
+
+    numWheelPoints = 50
+    angleScale = d3.scale.linear().domain([0,numWheelPoints]).range([0, Math.PI * 2])
+    wheelStrokeSize = 0.1
+    wheelPoints = null
 
     
     animationProps = {
@@ -34,12 +42,54 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3'],  (_,canvas
         },
         scaleToDraw: 0
         drawScaleCircle: 1
+        rollingCircle: {
+            x: circleRadius
+            draw: 0
+            rotation: Math.PI / 2
+            unrolledPoints: 0
+        }
     }
+    generateWheelPoints = () ->
+        if wheelPoints is null
+            wheelPoints = _.map(_.range(0, numWheelPoints), (index) ->
+                return {x:0, y:0}
+            )
+        _.each(wheelPoints, (point, index) ->
+
+            angle = angleScale(index) + animationProps.rollingCircle.rotation
+            if index < animationProps.rollingCircle.unrolledPoints
+                angle = Math.PI / 2
+            r = circleRadius - wheelStrokeSize / 2
+            if index % 2 is 0
+                r -= wheelStrokeSize
+            if index is 0
+                r += wheelStrokeSize * 4
+            x = Math.cos(angle) * r
+            y = Math.sin(angle) * r
+            x = scale(x)
+            y = scale(y)
+
+            #return {x: x, y: y}
+            point.x = x
+            point.y = y
+        )
+        
+    generateWheelPoints()
+    path.init(ctxt, wheelPoints)
+    
+    scaleToDrawTo = 4;
     setTweens = () ->
         tweenjs.removeAll()
-        new tweenjs.Tween(animationProps).to({scaleToDraw: 4},2000).start(0)
+        new tweenjs.Tween(animationProps).to({scaleToDraw: scaleToDrawTo},2000).start(0)
         new tweenjs.Tween(animationProps).delay(2600).to({drawScaleCircle: 0},0).start(0)
+        new tweenjs.Tween(animationProps.rollingCircle).delay(2600).to({draw: 1},0).start(0)
+        new tweenjs.Tween(animationProps.rollingCircle).delay(3000).to({
+            x: scaleToDrawTo - circleRadius,
+            rotation: Math.PI * 2 + animationProps.rollingCircle.rotation
+            unrolledPoints: numWheelPoints
+        },2000).start(0)
 
+        generateWheelPoints()
         #new tweenjs.Tween(animationProps).to({y:80},1000).start(0)
         #new tweenjs.Tween(animationProps).delay(1200).to({y:150}).start(0)
         #new tweenjs.Tween(animationProps).delay(2200).to({x:10}).start(0)
@@ -60,6 +110,8 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3'],  (_,canvas
             ctxt.lineTo(xScale(x), yAxisPos - unitSize)
             ctxt.fillText("" + x, xScale(x), yAxisPos - unitSize - 10)
         ctxt.stroke()
+
+        drawScaleCircle()
     drawScaleCircle = () ->
         ctxt.fillStyle = 'black'
         if animationProps.drawScaleCircle is 0 
@@ -69,9 +121,35 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3'],  (_,canvas
             return
         xPos = xScale(xPos - circleRadius)
         ctxt.beginPath()
-        pxRadius = xScale(circleRadius) - leftPadding
-        ctxt.arc xPos, yAxisPos - pxRadius, pxRadius, 0, Math.PI * 2, false
+        pxRadius = Math.floor(scale(circleRadius)) - 1
+        yPos = yAxisPos - pxRadius
+        ctxt.arc xPos, yPos, pxRadius, 0, Math.PI * 2, false
         ctxt.fill()
+        drawWheel({x: xPos, y: yPos})
+
+    drawWheel = (offset) ->
+        ctxt.strokeStyle = 'red'
+        ctxt.lineWidth =  Math.ceil(scale(wheelStrokeSize))
+        path.render(offset,true,false, true)
+
+    drawRollingCircle = () ->
+        ctxt.fillStyle = 'black'
+        if animationProps.rollingCircle.draw is 0
+            return
+        pxRadius = Math.floor(scale(circleRadius)) - 1
+
+        xPos = xScale(animationProps.rollingCircle.x)
+        yPos = yAxisPos - pxRadius
+        ctxt.beginPath()
+        ctxt.arc xPos, yPos, pxRadius, 0, Math.PI * 2, false
+        ctxt.fill()
+        ctxt.save()
+        ctxt.translate(xPos, yPos)
+        #ctxt.rotate(animationProps.rollingCircle.rotation)
+        ctxt.translate(-xPos, -yPos)
+        generateWheelPoints()
+        drawWheel({x: xPos, y: yPos})
+        #ctxt.restore()
 
     presetStartTime = 0
     firstTime = null
@@ -79,18 +157,18 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3'],  (_,canvas
 
     animate = (time) ->
         if firstTime is null
-            originalProps = _.clone(animationProps)
+            originalProps = _.clone(animationProps,true)
             firstTime = time
         
         t = (time + presetStartTime) - firstTime
-        if t > 5000
+        if t > resetTime
             return reset(0)
 
         tweenjs.update(t)
         ctxt.clearRect(0,0,dim,dim)
 
         drawScale()
-        drawScaleCircle()
+        drawRollingCircle()
         requestAnimationFrame(animate)
 
     reset = (setTime) ->
