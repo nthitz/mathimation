@@ -57,18 +57,17 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3','path'],  (_
         _.each(wheelPoints, (point, index) ->
 
             angle = angleScale(index) + animationProps.rollingCircle.rotation
-            if index < animationProps.rollingCircle.unrolledPoints
-                angle = Math.PI / 2
+            
             r = circleRadius - wheelStrokeSize / 2
             if index % 2 is 0
                 r -= wheelStrokeSize
-            if index is 0
-                r += wheelStrokeSize * 4
             x = Math.cos(angle) * r
             y = Math.sin(angle) * r
+            if index < animationProps.rollingCircle.unrolledPoints
+                y = circleRadius
+            
             x = scale(x)
             y = scale(y)
-
             #return {x: x, y: y}
             point.x = x
             point.y = y
