@@ -49,7 +49,9 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3','path'],  (_
             unrolledPoints: 0
         }
     }
-    generateWheelPoints = () ->
+    generateWheelPoints = (offset) ->
+        if typeof offset is 'undefined'
+            offset = {x:0, y:0}
         if wheelPoints is null
             wheelPoints = _.map(_.range(0, numWheelPoints), (index) ->
                 return {x:0, y:0}
@@ -64,11 +66,14 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3','path'],  (_
             x = Math.cos(angle) * r
             y = Math.sin(angle) * r
             if index < animationProps.rollingCircle.unrolledPoints
+                x = Math.cos
                 y = circleRadius
             
             x = scale(x)
             y = scale(y)
             #return {x: x, y: y}
+            x += offset.x
+            y += offset.y
             point.x = x
             point.y = y
         )
@@ -124,12 +129,13 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3','path'],  (_
         yPos = yAxisPos - pxRadius
         ctxt.arc xPos, yPos, pxRadius, 0, Math.PI * 2, false
         ctxt.fill()
-        drawWheel({x: xPos, y: yPos})
+        generateWheelPoints({x: xPos, y: yPos})
+        drawWheel()
 
-    drawWheel = (offset) ->
+    drawWheel = () ->
         ctxt.strokeStyle = 'red'
         ctxt.lineWidth =  Math.ceil(scale(wheelStrokeSize))
-        path.render(offset,true,false, true)
+        path.render(true,false, true)
 
     drawRollingCircle = () ->
         ctxt.fillStyle = 'black'
@@ -146,8 +152,8 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3','path'],  (_
         ctxt.translate(xPos, yPos)
         #ctxt.rotate(animationProps.rollingCircle.rotation)
         ctxt.translate(-xPos, -yPos)
-        generateWheelPoints()
-        drawWheel({x: xPos, y: yPos})
+        generateWheelPoints({x: xPos, y: yPos})
+        drawWheel()
         #ctxt.restore()
 
     presetStartTime = 0

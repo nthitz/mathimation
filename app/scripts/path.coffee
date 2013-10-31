@@ -9,12 +9,12 @@ define(['lodash',],  (_) ->
         else if _.isArray(_points)
             points = [_points]
         console.log points
-    render = (offset, close, fill, stroke) ->
+    render = (close, fill, stroke) ->
         _.each(points, (pointSet, psIndex) ->
             ctxt.beginPath()
             _.each(pointSet, (point, index) ->
-                x = offset.x + point.x
-                y = offset.y + point.y
+                x = point.x
+                y = point.y
                 if index is 0
                     ctxt.moveTo(x, y)
                 else
