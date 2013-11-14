@@ -181,7 +181,7 @@ module.exports = function (grunt) {
                 // Options: https://github.com/jrburke/r.js/blob/master/build/example.build.js
                 options: {
                     // `name` and `out` is set by grunt-usemin
-                    baseUrl: '<%= yeoman.app %>/scripts',
+                    baseUrl: '.tmp/scripts',
                     optimize: 'none',
                     // TODO: Figure out how to make sourcemaps work with grunt-usemin
                     // https://github.com/yeoman/grunt-usemin/issues/30
@@ -279,6 +279,20 @@ module.exports = function (grunt) {
         },
         // Put files not handled in other tasks here
         copy: {
+            rjs: {
+                expand: true,
+                dot: true,
+                cwd: '<%= yeoman.app %>/scripts',
+                dest: '.tmp/scripts/',
+                src: '{,*/}*.js'
+            },
+            bower: {
+                expand: true,
+                dot: true,
+                cwd: '<%= yeoman.app %>/bower_components',
+                dest: '.tmp/bower_components/',
+                src: '**/*.js'
+            },
             dist: {
                 files: [{
                     expand: true,
@@ -367,6 +381,8 @@ module.exports = function (grunt) {
         'useminPrepare',
         'concurrent:dist',
         'autoprefixer',
+        'copy:rjs',
+        'copy:bower',
         'requirejs',
         'concat',
         'cssmin',

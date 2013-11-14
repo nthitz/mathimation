@@ -3,7 +3,10 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3','path'],  (_
     'use strict';
     console.log canvas
     dim = 500
+    console.log 'rjs tween'
     console.log tweenjs
+    console.log 'window tween'
+    console.log TWEEN
     ctxt = canvas.init('canvas',dim,dim,true)
     ctxt.fillStyle = 'red';
     ctxt.fillRect(10,20,30,40)
@@ -111,7 +114,7 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3','path'],  (_
         ctxt.lineTo(xScale(4), yAxisPos)
         ctxt.textAlign = "center"
         ctxt.fillStyle = "black"
-        ctxt.font = "20pt Verdana"
+        ctxt.font = "12pt Verdana"
         tickArray = xScaleTickArray
         
         if animationProps.scaleToDraw < 4
@@ -133,7 +136,7 @@ define(['lodash','canvas','raf','tweenjs','timelineController','d3','path'],  (_
         ctxt.beginPath()
         ctxt.arc x, y, radius - 5, 0, Math.PI * 2, false
         ctxt.fill()
-        numSpokes = 6
+        numSpokes = 7
         angleInterpolate = d3.interpolate(0, Math.PI * 2)
 
         for i in [0..numSpokes - 1]
